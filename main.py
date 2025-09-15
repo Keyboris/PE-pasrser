@@ -27,50 +27,43 @@ def main():
             DOS_header = file.read(64)
 
             DOS_header_unpacked = pe_parser.unpackers.DOS_header_unpack(DOS_header)
-
-            print(f"e_lfanew: {DOS_header_unpacked["e_lfanew"]}")
             
             file.seek(DOS_header_unpacked["e_lfanew"])
 
             PE_signature = file.read(4)
 
-            print(' '.join(f"{b:02X}" for b in PE_signature))
+            pe_signature = ' '.join(f"{b:02X}" for b in PE_signature)
+
+            if pe_signature != "50 45 00 00":
+                print("PE signature does not match! Please make sure that the file is a PE file.")
+                exit(1)
 
             image_file_header = file.read(20)
             image_file_header_unpacked = pe_parser.unpackers.image_file_header_unpack(image_file_header)
 
+            print("\nOPTIONAL HEADER \n======================================= \n")
+
             print(f"Machine: {image_file_header_unpacked["Machine"]:02X}")
-            print(f"Size of the optinal header: {image_file_header_unpacked["SizeOfOptionalHeader"]}")
+            print(f"Size of the optinal header: {image_file_header_unpacked["SizeOfOptionalHeader"]}B")
             timestamp = image_file_header_unpacked["TimeDateStamp"]
             date_object = datetime.fromtimestamp(timestamp)
-            print(f"date of last linking/executing: {date_object}")
-
-            
-
-            # image_file_header_string = ""
-            # for byte in image_file_header:
-            #     image_file_header_string += f"{byte:02X} "
-            # print(image_file_header_string)
+            print(f"Date of the last linking/executing: {date_object}")
 
             optional_header = file.read(image_file_header_unpacked["SizeOfOptionalHeader"])
             optional_header_unpacked = pe_parser.unpackers.optional_header_unpack(optional_header)
 
-            print(f"magic word: {optional_header_unpacked["Magic"]:02X} (0x20B for 64 bits, 0x10b for 32 bits)")
+            print(f"Magic word: {optional_header_unpacked["Magic"]:02X} (0x20B for 64 bits, 0x10b for 32 bits)")
 
-            print(f"data directory: {str(optional_header_unpacked["DataDirectory"])}")
-            
+            #print(f"Data directory: {str(optional_header_unpacked["DataDirectory"])}")
 
-            #next, get the section haeders data
-
-
-
+            print("\n SECTION HEADER \n======================================= \n")            
 
             section_headers = file.read(40 * image_file_header_unpacked["NumberOfSections"])
-            print(f"Size of the seciton headers: {40 * image_file_header_unpacked["NumberOfSections"]}")
+            print(f"Size of seciton headers: {40 * image_file_header_unpacked["NumberOfSections"]}")
 
             section_headers_unpacked = pe_parser.unpackers.section_headers_unpack(section_headers, image_file_header_unpacked["NumberOfSections"])
 
-            print(f"name of the fisrt section: {section_headers_unpacked[2].Name}")
+            print(f"Name of the fisrt section: {section_headers_unpacked[2].Name}")
             
             data_directory = optional_header_unpacked["DataDirectory"]
             print(optional_header_unpacked["ImageBase"] + data_directory[1].get("VirtualAddress"))
@@ -99,9 +92,6 @@ def main():
     except Exception as e:
         print(e)
 
-    #C:\Users\iluya\Downloads\smallexe.exe
-    #C:\Users\iluya\Downloads\cuda_13.0.0_windows.exe
-    #C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\bin\win64\client.dll
     #for the ht headers, the structure is the following:
     #4 bytes for the PE signature (50450000)
     #20 bytes for the file header/COFF header
