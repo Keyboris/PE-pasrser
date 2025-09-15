@@ -41,22 +41,20 @@ def main():
             image_file_header = file.read(20)
             image_file_header_unpacked = pe_parser.unpackers.image_file_header_unpack(image_file_header)
 
-            print("\nOPTIONAL HEADER \n======================================= \n")
-
-            print(f"Machine: {image_file_header_unpacked["Machine"]:02X}")
-            print(f"Size of the optinal header: {image_file_header_unpacked["SizeOfOptionalHeader"]}B")
             timestamp = image_file_header_unpacked["TimeDateStamp"]
             date_object = datetime.fromtimestamp(timestamp)
             print(f"Date of the last linking/executing: {date_object}")
 
+            
+
             optional_header = file.read(image_file_header_unpacked["SizeOfOptionalHeader"])
             optional_header_unpacked = pe_parser.unpackers.optional_header_unpack(optional_header)
-
-            print(f"Magic word: {optional_header_unpacked["Magic"]:02X} (0x20B for 64 bits, 0x10b for 32 bits)")
+            
+            pe_parser.utils.print_data_optional_header(optional_header_unpacked)
 
             #print(f"Data directory: {str(optional_header_unpacked["DataDirectory"])}")
 
-            print("\n SECTION HEADER \n======================================= \n")            
+            print("\n SECTION HEADERS \n======================================= \n")            
 
             section_headers = file.read(40 * image_file_header_unpacked["NumberOfSections"])
             print(f"Size of seciton headers: {40 * image_file_header_unpacked["NumberOfSections"]}")
