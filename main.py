@@ -66,7 +66,7 @@ def main():
             data_directory = optional_header_unpacked["DataDirectory"]
             print(optional_header_unpacked["ImageBase"] + data_directory[1].get("VirtualAddress"))
             print(optional_header_unpacked["ImageBase"])
-            file.seek(pe_parser.utils.rva_to_file_offset(data_directory[1].get("VirtualAddress"), section_headers_unpacked), 0)  #fuck              wtf does fuck mean? i forgot   no i know, hopefully solved      SOLVED   LESSSSSSGOOOOOOOOOOOOO
+            file.seek(pe_parser.utils.rva_to_file_offset(data_directory[1].get("VirtualAddress"), section_headers_unpacked), 0)  
 
             data = file.read(20)
             print(f"confirmation: {len(data)}")
