@@ -1,4 +1,4 @@
-def rva_to_file_offset(RVA, Sections):   #blya(
+def rva_to_file_offset(RVA, Sections):  
     for section in Sections:
         if section.VirtualAddress <= RVA < (section.VirtualAddress + section.VirtualSize):
             File_Offset = section.PointerToRawData + (RVA - section.VirtualAddress)
