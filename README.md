@@ -113,9 +113,6 @@ Contributions are welcome! Areas for improvement:
 - Digital signature verification
 - Enhanced error handling and validation
 
-## License
-
-[Add your license here]
 
 ## References
 
