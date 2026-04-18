@@ -3,6 +3,7 @@ def rva_to_file_offset(RVA, Sections):
         if section.VirtualAddress <= RVA < (section.VirtualAddress + section.VirtualSize):
             File_Offset = section.PointerToRawData + (RVA - section.VirtualAddress)
             return File_Offset
+    raise ValueError("RVA does not fall within sections!")
         
 def dll_characteristics_parse(value):
     flags = {
