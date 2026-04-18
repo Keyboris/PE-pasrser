@@ -25,13 +25,13 @@ class Unpacker:
         COFF_file_header = self.file.read(20)
         self.COFF_header_unpacked = self.COFF_header_unpack(COFF_file_header)
 
-        optional_header = self.file.read(self.image_file_header_unpacked["SizeOfOptionalHeader"])
+        optional_header = self.file.read(self.COFF_header_unpacked["SizeOfOptionalHeader"])
         self.optional_header_unpacked = self.optional_header_unpack(optional_header)
         # 0x20B is PE32+ (64-bit), 0x10B is PE32 (32-bit)
         self.is_64_bit = (self.optional_header_unpacked["Magic"] == 0x20B)        
 
-        section_headers = self.file.read(40 * self.image_file_header_unpacked["NumberOfSections"])
-        self.section_headers_unpacked = self.section_headers_unpack(section_headers, self.image_file_header_unpacked["NumberOfSections"])
+        section_headers = self.file.read(40 * self.COFF_header_unpacked["NumberOfSections"])
+        self.section_headers_unpacked = self.section_headers_unpack(section_headers, self.COFF_header_unpacked["NumberOfSections"])
 
 
     def close_file(self):
