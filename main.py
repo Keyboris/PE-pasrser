@@ -1,7 +1,7 @@
 import struct
 import pe_parser.models
 import pe_parser.utils
-import pe_parser.unpackers
+import pe_parser.unpacker
 
 
 def main():
