@@ -1,7 +1,7 @@
-def rva_to_file_offset(RVA, Sections):  
-    for section in Sections:
-        if section.VirtualAddress <= RVA < (section.VirtualAddress + section.VirtualSize):
-            File_Offset = section.PointerToRawData + (RVA - section.VirtualAddress)
+def rva_to_file_offset(rva, sections):  
+    for section in sections:
+        if section.VirtualAddress <= rva < (section.VirtualAddress + section.VirtualSize):
+            File_Offset = section.PointerToRawData + (rva - section.VirtualAddress)
             return File_Offset
     raise ValueError("RVA does not fall within sections!")
         
@@ -58,3 +58,10 @@ def print_data_optional_header(optional_header_unpacked):
     print(f"Size of heap commit: {optional_header_unpacked["SizeOfHeapCommit"]}B")
     print(f"Loader flags (reserved, should be 0): {optional_header_unpacked["LoaderFlags"]}")
     print(f"Number of data directory (NumberOfRvaAndSizes): {optional_header_unpacked["NumberOfRvaAndSizes"]}")
+
+def section_name_by_rva(rva, sections):
+    for section in sections:
+        if section.VirtualAddress <= rva < (section.VirtualAddress + section.VirtualSize):
+            return section.Name.decode('ascii', errors='ignore').strip('\x00')
+    # Not raising an error for ML
+    return "Unknown"
