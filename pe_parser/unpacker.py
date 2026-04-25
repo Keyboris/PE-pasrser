@@ -1,9 +1,9 @@
 import struct
-import constants
+from pe_parser.constants import header_constants
 from datetime import datetime
 from .models import SectionHeader
 from .models import ImageImportDescriptor
-from pe_parser.utils import *
+from pe_parser.utils import rva_to_file_offset, section_name_by_rva
 
 class Unpacker:
     
@@ -32,40 +32,49 @@ class Unpacker:
 
         section_headers = self.file.read(40 * self.COFF_header_unpacked["NumberOfSections"])
         self.section_headers_unpacked = self.section_headers_unpack(section_headers, self.COFF_header_unpacked["NumberOfSections"])
+        self.import_directory_table_unpacked = self.import_directory_table_unpack()
 
 
     def close_file(self):
         self.file.close()
 
 
-    def DOS_header_unpack (self, header):
-        data = struct.unpack(constants.DOS_HEADER_FORMAT, header)
-        return dict(zip(constants.DOS_HEADER_KEYS, data))
+    def DOS_header_unpack(self, header):
+        data = struct.unpack(header_constants.DOS_HEADER_FORMAT, header)
+        return {
+            "e_magic": data[0], "e_cblp": data[1], "e_cp": data[2],
+            "e_crlc": data[3], "e_cparhdr": data[4], "e_minalloc": data[5],
+            "e_maxalloc": data[6], "e_ss": data[7], "e_sp": data[8],
+            "e_csum": data[9], "e_ip": data[10], "e_cs": data[11],
+            "e_lfarlc": data[12], "e_ovno": data[13],
+            "e_res": data[14:18], "e_oemid": data[18], "e_oeminfo": data[19],
+            "e_res2": data[20:30], "e_lfanew": data[30]
+        }
 
     def COFF_header_unpack(self, header):
-        data = struct.unpack(constants.COFF_HEADER_FORMAT, header)
-        return dict(zip(constants.COFF_HEADER_KEYS, data))
+        data = struct.unpack(header_constants.COFF_HEADER_FORMAT, header)
+        return dict(zip(header_constants.COFF_HEADER_KEYS, data))
 
     def optional_header_unpack(self, header_bytes): 
 
         magic = struct.unpack_from('<H', header_bytes, 0)[0]
 
         if magic == 0x10B:  # PE32 (32-bit)
-            fixed_format = constants.OPTIONAL_HEADER_32_FORMAT
+            fixed_format = header_constants.OPTIONAL_HEADER_32_FORMAT
             fixed_data = struct.unpack(fixed_format, header_bytes[:96])
-            return_vals = dict(zip(constants.OPTIONAL_HEADER_32_KEYS, fixed_data))
+            return_vals = dict(zip(header_constants.OPTIONAL_HEADER_32_KEYS, fixed_data))
 
         elif magic == 0x20B:  # PE32+ (64-bit)
-            fixed_format = constants.OPTIONAL_HEADER_64_FORMAT
+            fixed_format = header_constants.OPTIONAL_HEADER_64_FORMAT
             fixed_data = struct.unpack(fixed_format, header_bytes[:112])
-            return_vals = dict(zip(constants.OPTIONAL_HEADER_64_KEYS, fixed_data))
+            return_vals = dict(zip(header_constants.OPTIONAL_HEADER_64_KEYS, fixed_data))
         else:
             raise ValueError(f"Invalid optional header magic number: {magic:#x}")
         
         data_dir_format = '<32L'
         data_dir_bytes = header_bytes[struct.calcsize(fixed_format):]
 
-        return_vals["DataDirectory"] = [{"VirtualAddress": va, "Size": size} for va, size in struct.iter_unpack('<LL', data_dir_bytes)]
+        return_vals["DataDirectory"] = [{"VirtualAddress": va, "Size": size} for va, size in struct.iter_unpack('<LL', data_dir_bytes[:128])]
 
         return return_vals
 
@@ -83,7 +92,7 @@ class Unpacker:
             sec_header = SectionHeader(
                 Name=data[0],    
                 VirtualSize=data[1],
-                PhysicalAddress=data[2],      
+                PhysicalAddress=data[1],      
                 VirtualAddress=data[2],
                 SizeOfRawData=data[3],
                 PointerToRawData=data[4],
@@ -98,6 +107,11 @@ class Unpacker:
         return section_headers_list
 
     def import_directory_table_unpack(self):
+        import_dir_rva = self.optional_header_unpacked["DataDirectory"][1]["VirtualAddress"]
+        if import_dir_rva == 0:
+            return []
+        import_dir_offset = rva_to_file_offset(import_dir_rva, self.section_headers_unpacked)
+        self.file.seek(import_dir_offset, 0)
         image_import_descriptors_array = []
         image_import_descriptor_zeroed = False
         image_import_descriptor_format = '<5L'
@@ -138,47 +152,3 @@ class Unpacker:
             import_lookup_table_array.append(entry_value)
         return import_lookup_table_array
 
-
-        #UNPACKER ONLY UNPACKS
-
-    # def name_lookup_by_image_import_descriptor(self, descriptor):
-    #     int_offset = rva_to_file_offset(descriptor.OriginalFirstThunk, self.section_headers_unpacked)
-    #     self.file.seek(int_offset, 0)
-    #     import_lookup_table_unpacked = self.import_lookup_table_unpack()
-        
-    #     import_names = []
-    #     ordinal_flag = (1 << 63) if self.is_64_bit else (1 << 31)
-        
-    #     for entry in import_lookup_table_unpacked:
-    #         if entry & ordinal_flag:
-    #             ordinal_number = entry & 0xFFFF
-    #             import_names.append(f"Ordinal_{ordinal_number}")
-    #             continue
-                
-    #         name_offset = rva_to_file_offset(entry, self.section_headers_unpacked)
-    #         self.file.seek(name_offset, 0)
-    #         _hint = self.file.read(2)
-    
-    #         name_bytes = bytearray()
-    #         while (byte := self.file.read(1)) != b'\x00':
-    #             if not byte: 
-    #                 break
-    #             name_bytes.append(ord(byte))
-            
-    #         try:
-    #             name_string = name_bytes.decode('ascii')
-    #             import_names.append(name_string)
-    #         except UnicodeDecodeError:
-    #             import_names.append("<Decode Error>")
-                
-    #     return import_names
-    
-
-
-    # def print_section_characteristics(self):
-    #     for section_header in self.section_headers_unpackeds:
-    #         #TODO: entropy calculation, string parsing
-    #         print(f"Name of the section: {section_header.Name}")
-    #         print(f'{section_header.Characteristics:#x}')
-    #         if section_header.Characteristics & 0x80000000 and section_header.Characteristics & 0x20000000:
-    #             print("WARNING: section is marked as both writable and executable")
