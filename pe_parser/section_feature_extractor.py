@@ -1,4 +1,4 @@
-from entropy_calculator import section_entropy
+from pe_parser.entropy_calculator import section_entropy
 
 class SectionFeatureExtractor:
 
