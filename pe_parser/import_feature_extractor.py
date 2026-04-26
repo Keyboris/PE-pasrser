@@ -7,22 +7,29 @@ class ImportFeatureExtractor:
         self.import_descriptors = unpacker.import_directory_table_unpacked
         self.file = unpacker.file
         self.has_ordinal_imports = False
-        self.name_extract_from_import_descriptors()
         self.section_headers_unpacked = unpacker.section_headers_unpacked
+        self.name_extract_from_import_descriptors()
         self.imports_networking = False
-
-    def import_dll_counter(self):
-        return len({descriptor.Name for descriptor in self.import_descriptors})
-
 
     def name_extract_from_import_descriptors(self):
         self.import_names = set()
         self.import_ordinals = set()
+        self.dll_names = set()
         ordinal_flag = (1 << 63) if self.unpacker.is_64_bit else (1 << 31)
 
         for descriptor in self.import_descriptors:
             if descriptor.OriginalFirstThunk == 0:
                 continue
+
+            # Seek to dll names and add to the set for import_dll_counter
+            dll_name_offset = rva_to_file_offset(descriptor.Name, self.section_headers_unpacked)
+            self.file.seek(dll_name_offset)
+            dll_name_bytes = bytearray()
+            while (byte := self.file.read(1)) not in (b'\x00', b''):
+                dll_name_bytes.append(ord(byte))
+            self.dll_names.add(dll_name_bytes.decode('ascii', errors='replace').lower())
+
+            # Seek to the ilt for import names and import ordinals
             int_offset = rva_to_file_offset(descriptor.OriginalFirstThunk, self.section_headers_unpacked)
             self.file.seek(int_offset, 0)
             ilt_entries = self.unpacker.import_lookup_table_unpack()
@@ -32,7 +39,8 @@ class ImportFeatureExtractor:
                     self.import_ordinals.add(entry & 0xFFFF)
                     self.has_ordinal_imports = True
                     continue
-                name_offset = rva_to_file_offset(entry & 0x7FFFFFFF, self.section_headers_unpacked)
+                mask = 0x7FFFFFFFFFFFFFFF if self.unpacker.is_64_bit else 0x7FFFFFFF
+                name_offset = rva_to_file_offset(entry & mask, self.section_headers_unpacked)
                 self.file.seek(name_offset)
                 _hint = self.file.read(2)
                 name_bytes = bytearray()
@@ -42,6 +50,9 @@ class ImportFeatureExtractor:
                     self.import_names.add(name_bytes.decode('ascii'))
                 except UnicodeDecodeError:
                     pass
+
+    def import_dll_counter(self):
+        return len(self.dll_names)
                 
     def has_networking_imports(self) -> bool:
         return any(
