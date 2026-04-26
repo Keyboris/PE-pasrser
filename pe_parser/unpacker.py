@@ -34,6 +34,12 @@ class Unpacker:
         self.section_headers_unpacked = self.section_headers_unpack(section_headers, self.COFF_header_unpacked["NumberOfSections"])
         self.import_directory_table_unpacked = self.import_directory_table_unpack()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.file.close()
+        return False
 
     def close_file(self):
         self.file.close()
