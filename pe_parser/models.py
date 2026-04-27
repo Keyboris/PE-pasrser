@@ -21,7 +21,7 @@ class ImageImportDescriptor:
         self.Name = Name
         self.FirstThunk = FirstThunk
 
-    def isZeroed(self):
+    def isZeroed(self) -> bool:
         return (self.Characteristics == 0 and
                 self.OriginalFirstThunk == 0 and
                 self.TimeDateStamp == 0 and

@@ -1,15 +1,15 @@
 import struct
-from pe_parser.constants import header_constants
+from constants import header_constants
 from datetime import datetime
-from .models import SectionHeader
-from .models import ImageImportDescriptor
-from pe_parser.utils import rva_to_file_offset, section_name_by_rva
+from models import SectionHeader
+from models import ImageImportDescriptor
+from utils import rva_to_file_offset, section_name_by_rva
 
 class Unpacker:
     
-    def __init__(self, file_path):
-        self.file_path = file_path
-        self.file = open(self.file_path, 'rb')
+    def __init__(self, filepath: str):
+        self.filepath = filepath
+        self.file = open(self.filepath, 'rb')
 
         DOS_header = self.file.read(64)
         DOS_header_unpacked = self.DOS_header_unpack(DOS_header)

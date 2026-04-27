@@ -1,5 +1,6 @@
 import re
 import mmap
+from unpacker import Unpacker
 
 IP_PATTERN = re.compile(rb'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b')
 BASE64_PATTERN = re.compile(rb'[A-Za-z0-9+/]{32,}={0,2}')
@@ -9,7 +10,7 @@ URL_MARKERS = (b'http://', b'https://')
 
 class StringFeatureExtractor:
 
-    def __init__(self, unpacker):
+    def __init__(self, unpacker: Unpacker):
         self.file = unpacker.file
 
     def extract_string_features(self, min_length=4) -> dict:

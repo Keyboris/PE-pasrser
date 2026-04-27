@@ -1,13 +1,14 @@
-from pe_parser.utils import section_name_by_rva
+from utils import section_name_by_rva
 from datetime import datetime
+from unpacker import Unpacker
 
 class HeadersFeatureExtractor:
-    def __init__(self, unpacker):
+    def __init__(self, unpacker: Unpacker):
         self.unpacker = unpacker
         self.COFF_header = unpacker.COFF_header_unpacked
         self.optional_header = unpacker.optional_header_unpacked
 
-    def extract_features(self):
+    def extract_features(self) -> dict[str, float | int | bool]:
         entry_point_rva = self.optional_header["AddressOfEntryPoint"]
         entry_point_section = section_name_by_rva(entry_point_rva, self.unpacker.section_headers_unpacked)
         

@@ -1,8 +1,9 @@
-from pe_parser.utils import rva_to_file_offset
-from pe_parser.constants import suspicious_apis_constants
+from utils import rva_to_file_offset
+from constants import suspicious_apis_constants
+from unpacker import Unpacker
 
 class ImportFeatureExtractor:
-    def __init__(self, unpacker):
+    def __init__(self, unpacker: Unpacker):
         self.unpacker = unpacker
         self.import_descriptors = unpacker.import_directory_table_unpacked
         self.file = unpacker.file
@@ -60,62 +61,62 @@ class ImportFeatureExtractor:
             for name in self.import_names
         )
     
-    def has_registry_imports(self):
+    def has_registry_imports(self) -> bool:
         return any(
             name in suspicious_apis_constants.SUSPICIOUS_APIS["registry"]
             for name in self.import_names
         )
 
 
-    def has_cryptography_imports(self):
+    def has_cryptography_imports(self) -> bool:
         return any(
             name in suspicious_apis_constants.SUSPICIOUS_APIS["cryptography"]
             for name in self.import_names
         )
 
-    def has_process_injection_imports(self):
+    def has_process_injection_imports(self) -> bool:
         return any(
             name in suspicious_apis_constants.SUSPICIOUS_APIS["process_injection"]
             for name in self.import_names
         )
 
-    def has_anti_debugging_imports(self):
+    def has_anti_debugging_imports(self) -> bool:
         return any(
             name in suspicious_apis_constants.SUSPICIOUS_APIS["anti_debugging"]
             for name in self.import_names
         )
 
-    def has_anti_analysis_imports(self):
+    def has_anti_analysis_imports(self) -> bool:
         return any(
             name in suspicious_apis_constants.SUSPICIOUS_APIS["anti_analysis"]
             for name in self.import_names
         )
 
-    def has_keylogging_imports(self):
+    def has_keylogging_imports(self) -> bool:
         return any(
             name in suspicious_apis_constants.SUSPICIOUS_APIS["keylogging"]
             for name in self.import_names
             )
 
-    def has_persistence_imports(self):
+    def has_persistence_imports(self) -> bool:
         return any(
             name in suspicious_apis_constants.SUSPICIOUS_APIS["persistence"]
             for name in self.import_names
         )
 
-    def has_file_system_imports(self):
+    def has_file_system_imports(self) -> bool:
         return any(
             name in suspicious_apis_constants.SUSPICIOUS_APIS["file_system"]
             for name in self.import_names
         )
     
-    def has_privilege_escalation_imports(self):
+    def has_privilege_escalation_imports(self) -> bool:
         return any(
             name in suspicious_apis_constants.SUSPICIOUS_APIS["privilege_escalation"]
             for name in self.import_names
         )
 
-    def export_import_features(self):
+    def export_import_features(self) -> dict[str, float | int | bool]:
         total = len(self.import_names) + len(self.import_ordinals)
         features = {
             "import_dll_count": self.import_dll_counter(),
