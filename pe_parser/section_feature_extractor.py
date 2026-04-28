@@ -1,5 +1,5 @@
-from entropy_calculator import section_entropy
-from unpacker import Unpacker
+from pe_parser.entropy_calculator import section_entropy
+from pe_parser.unpacker import Unpacker
 
 class SectionFeatureExtractor:
 

@@ -1,9 +1,9 @@
 import struct
-from constants import header_constants
+from pe_parser.constants.header_constants import *
 from datetime import datetime
-from models import SectionHeader
-from models import ImageImportDescriptor
-from utils import rva_to_file_offset, section_name_by_rva
+from pe_parser.models import SectionHeader
+from pe_parser.models import ImageImportDescriptor
+from pe_parser.utils import rva_to_file_offset, section_name_by_rva
 
 class Unpacker:
     
@@ -46,7 +46,7 @@ class Unpacker:
 
 
     def DOS_header_unpack(self, header):
-        data = struct.unpack(header_constants.DOS_HEADER_FORMAT, header)
+        data = struct.unpack(DOS_HEADER_FORMAT, header)
         return {
             "e_magic": data[0], "e_cblp": data[1], "e_cp": data[2],
             "e_crlc": data[3], "e_cparhdr": data[4], "e_minalloc": data[5],
@@ -58,22 +58,22 @@ class Unpacker:
         }
 
     def COFF_header_unpack(self, header):
-        data = struct.unpack(header_constants.COFF_HEADER_FORMAT, header)
-        return dict(zip(header_constants.COFF_HEADER_KEYS, data))
+        data = struct.unpack(COFF_HEADER_FORMAT, header)
+        return dict(zip(COFF_HEADER_KEYS, data))
 
     def optional_header_unpack(self, header_bytes): 
 
         magic = struct.unpack_from('<H', header_bytes, 0)[0]
 
         if magic == 0x10B:  # PE32 (32-bit)
-            fixed_format = header_constants.OPTIONAL_HEADER_32_FORMAT
+            fixed_format = OPTIONAL_HEADER_32_FORMAT
             fixed_data = struct.unpack(fixed_format, header_bytes[:96])
-            return_vals = dict(zip(header_constants.OPTIONAL_HEADER_32_KEYS, fixed_data))
+            return_vals = dict(zip(OPTIONAL_HEADER_32_KEYS, fixed_data))
 
         elif magic == 0x20B:  # PE32+ (64-bit)
-            fixed_format = header_constants.OPTIONAL_HEADER_64_FORMAT
+            fixed_format = OPTIONAL_HEADER_64_FORMAT
             fixed_data = struct.unpack(fixed_format, header_bytes[:112])
-            return_vals = dict(zip(header_constants.OPTIONAL_HEADER_64_KEYS, fixed_data))
+            return_vals = dict(zip(OPTIONAL_HEADER_64_KEYS, fixed_data))
         else:
             raise ValueError(f"Invalid optional header magic number: {magic:#x}")
         

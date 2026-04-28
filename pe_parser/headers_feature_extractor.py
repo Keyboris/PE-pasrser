@@ -1,6 +1,6 @@
-from utils import section_name_by_rva
+from pe_parser.utils import section_name_by_rva
 from datetime import datetime
-from unpacker import Unpacker
+from pe_parser.unpacker import Unpacker
 
 class HeadersFeatureExtractor:
     def __init__(self, unpacker: Unpacker):

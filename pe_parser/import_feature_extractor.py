@@ -1,6 +1,6 @@
-from utils import rva_to_file_offset
-from constants import suspicious_apis_constants
-from unpacker import Unpacker
+from pe_parser.utils import rva_to_file_offset
+from pe_parser.constants.suspicious_apis_constants import SUSPICIOUS_APIS
+from pe_parser.unpacker import Unpacker
 
 class ImportFeatureExtractor:
     def __init__(self, unpacker: Unpacker):
@@ -57,62 +57,62 @@ class ImportFeatureExtractor:
                 
     def has_networking_imports(self) -> bool:
         return any(
-            name in suspicious_apis_constants.SUSPICIOUS_APIS["networking"]
+            name in SUSPICIOUS_APIS["networking"]
             for name in self.import_names
         )
     
     def has_registry_imports(self) -> bool:
         return any(
-            name in suspicious_apis_constants.SUSPICIOUS_APIS["registry"]
+            name in SUSPICIOUS_APIS["registry"]
             for name in self.import_names
         )
 
 
     def has_cryptography_imports(self) -> bool:
         return any(
-            name in suspicious_apis_constants.SUSPICIOUS_APIS["cryptography"]
+            name in SUSPICIOUS_APIS["cryptography"]
             for name in self.import_names
         )
 
     def has_process_injection_imports(self) -> bool:
         return any(
-            name in suspicious_apis_constants.SUSPICIOUS_APIS["process_injection"]
+            name in SUSPICIOUS_APIS["process_injection"]
             for name in self.import_names
         )
 
     def has_anti_debugging_imports(self) -> bool:
         return any(
-            name in suspicious_apis_constants.SUSPICIOUS_APIS["anti_debugging"]
+            name in SUSPICIOUS_APIS["anti_debugging"]
             for name in self.import_names
         )
 
     def has_anti_analysis_imports(self) -> bool:
         return any(
-            name in suspicious_apis_constants.SUSPICIOUS_APIS["anti_analysis"]
+            name in SUSPICIOUS_APIS["anti_analysis"]
             for name in self.import_names
         )
 
     def has_keylogging_imports(self) -> bool:
         return any(
-            name in suspicious_apis_constants.SUSPICIOUS_APIS["keylogging"]
+            name in SUSPICIOUS_APIS["keylogging"]
             for name in self.import_names
             )
 
     def has_persistence_imports(self) -> bool:
         return any(
-            name in suspicious_apis_constants.SUSPICIOUS_APIS["persistence"]
+            name in SUSPICIOUS_APIS["persistence"]
             for name in self.import_names
         )
 
     def has_file_system_imports(self) -> bool:
         return any(
-            name in suspicious_apis_constants.SUSPICIOUS_APIS["file_system"]
+            name in SUSPICIOUS_APIS["file_system"]
             for name in self.import_names
         )
     
     def has_privilege_escalation_imports(self) -> bool:
         return any(
-            name in suspicious_apis_constants.SUSPICIOUS_APIS["privilege_escalation"]
+            name in SUSPICIOUS_APIS["privilege_escalation"]
             for name in self.import_names
         )
 

@@ -1,6 +1,6 @@
 import re
 import mmap
-from unpacker import Unpacker
+from pe_parser.unpacker import Unpacker
 
 IP_PATTERN = re.compile(rb'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b')
 BASE64_PATTERN = re.compile(rb'[A-Za-z0-9+/]{32,}={0,2}')

@@ -1,10 +1,10 @@
-from unpacker import Unpacker
-from headers_feature_extractor import HeadersFeatureExtractor
-from import_feature_extractor import ImportFeatureExtractor
-from section_feature_extractor import SectionFeatureExtractor
-from string_feature_extractor import StringFeatureExtractor
+from pe_parser.unpacker import Unpacker
+from pe_parser.headers_feature_extractor import HeadersFeatureExtractor
+from pe_parser.import_feature_extractor import ImportFeatureExtractor
+from pe_parser.section_feature_extractor import SectionFeatureExtractor
+from pe_parser.string_feature_extractor import StringFeatureExtractor
 
-def process_file(filepath: str, headers_flag: bool, section_flag: bool, import_flag: bool, string_flag: bool) -> dict[str, float | int | bool] | None:
+def process_file(filepath: str) -> dict[str, float | int | bool] | None:
     try:
         with Unpacker(filepath) as unpacker:
                 header_features = HeadersFeatureExtractor(unpacker).extract_features()
