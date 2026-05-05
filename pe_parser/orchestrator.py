@@ -10,6 +10,7 @@ def process_destination(dirpath: str, recursive: bool) -> list[dict]:
             full_path = join(root, name)
             result = process_file(full_path)
             if result is not None:
+                result["family"] = root
                 result["filepath"] = full_path
                 result["is_dll"] = os.path.splitext(full_path)[1].lower() == ".dll"
                 print(f"processed: {full_path}")
