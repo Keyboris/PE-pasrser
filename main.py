@@ -1,100 +1,76 @@
-import struct
-import pe_parser.models
-import pe_parser.utils
-import pe_parser.unpackers
-from datetime import datetime
+import argparse
+import csv
+import sys
+from pe_parser.unpacker import Unpacker
+from pe_parser.headers_feature_extractor import HeadersFeatureExtractor
+from pe_parser.import_feature_extractor import ImportFeatureExtractor
+from pe_parser.section_feature_extractor import SectionFeatureExtractor
+from pe_parser.string_feature_extractor import StringFeatureExtractor
+from pe_parser.orchestrator import process_destination
+
+def print_features(label: str, features: dict):
+    print(f"\n{label}:\n")
+    for key, value in features.items():
+        print(f"  {key}: {value}")
+
+def analyse_single(filepath: str, args):
+    with Unpacker(filepath) as unpacker:
+        run_all = args.all_flags
+        if run_all or args.headers:
+            print_features("Header features", HeadersFeatureExtractor(unpacker).extract_features())
+        if run_all or args.sections:
+            print_features("Section features", SectionFeatureExtractor(unpacker).extract_analysis_features())
+        if run_all or args.imports:
+            print_features("Import features", ImportFeatureExtractor(unpacker).export_import_features())
+        if run_all or args.strings:
+            print_features("String features", StringFeatureExtractor(unpacker).extract_string_features())
+
+def analyse_batch(dirpath: str, args):
+    results = process_destination(dirpath, args.recursive)
+    if not results:
+        print("No valid PE files found.", file=sys.stderr)
+        return
+
+    output_path = args.output or "features.csv"
+    fieldnames = list(results[0].keys())
+
+    with open(output_path, 'w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(results)
+
+    print(f"Processed {len(results)} files → {output_path}")
 
 def main():
-        
-    path_to_file = input("Enter the path to the file: ")
-    #READING THE DOS HEADER
-    # try:
-    #     with open(path_to_file, "rb") as f:
-    #         DOS_header_bytes = f.read(64)
-    #         DOS_header_string = ""
-    #         for byte in DOS_header_bytes:
-    #             DOS_header_string += f"{byte:02X} "
-    #         print(DOS_header_string)
-    # except FileNotFoundError:
-    #     print(f"File {path_to_file} was not found")
-    # except Exception as e:
-    #     print(e)
+    parser = argparse.ArgumentParser(description="PE file analyser")
 
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--file", metavar="PATH", help="Single PE file to analyse")
+    source.add_argument("--dir", metavar="PATH", help="Directory of PE files for batch extraction")
 
-    #READING THE NT HEADERS
-    try:
-        with open(path_to_file, 'rb') as file:
-            DOS_header = file.read(64)
+    # Single file display flags
+    parser.add_argument("--headers", action=argparse.BooleanOptionalAction)
+    parser.add_argument("--sections", action=argparse.BooleanOptionalAction)
+    parser.add_argument("--imports", action=argparse.BooleanOptionalAction)
+    parser.add_argument("--strings", action=argparse.BooleanOptionalAction)
+    parser.add_argument("--all", dest="all_flags", action=argparse.BooleanOptionalAction,
+                        help="Run all extractors (single file mode)")
 
-            DOS_header_unpacked = pe_parser.unpackers.DOS_header_unpack(DOS_header)
-            
-            file.seek(DOS_header_unpacked["e_lfanew"])
+    # Batch flags
+    parser.add_argument("--recursive", "-r", action="store_true",
+                        help="Recurse into subdirectories (batch mode)")
+    parser.add_argument("--output", "-o", metavar="FILE",
+                        help="CSV output path (batch mode, default: features.csv)")
 
-            PE_signature = file.read(4)
+    args = parser.parse_args()
 
-            pe_signature = ' '.join(f"{b:02X}" for b in PE_signature)
+    if args.file:
+        if not any([args.headers, args.sections, args.imports, args.strings, args.all_flags]):
+            parser.error("Specify at least one flag: --headers --sections --imports --strings --all")
+        analyse_single(args.file, args)
 
-            if pe_signature != "50 45 00 00":
-                print("PE signature does not match! Please make sure that the file is a PE file.")
-                exit(1)
-
-            image_file_header = file.read(20)
-            image_file_header_unpacked = pe_parser.unpackers.image_file_header_unpack(image_file_header)
-
-            timestamp = image_file_header_unpacked["TimeDateStamp"]
-            date_object = datetime.fromtimestamp(timestamp)
-            print(f"Date of the last linking/executing: {date_object}")
-
-            
-
-            optional_header = file.read(image_file_header_unpacked["SizeOfOptionalHeader"])
-            optional_header_unpacked = pe_parser.unpackers.optional_header_unpack(optional_header)
-            
-            pe_parser.utils.print_data_optional_header(optional_header_unpacked)
-
-            #print(f"Data directory: {str(optional_header_unpacked["DataDirectory"])}")
-
-            print("\n SECTION HEADERS \n======================================= \n")            
-
-            section_headers = file.read(40 * image_file_header_unpacked["NumberOfSections"])
-            print(f"Size of seciton headers: {40 * image_file_header_unpacked["NumberOfSections"]}")
-
-            section_headers_unpacked = pe_parser.unpackers.section_headers_unpack(section_headers, image_file_header_unpacked["NumberOfSections"])
-
-            print(f"Name of the fisrt section: {section_headers_unpacked[2].Name}")
-            
-            data_directory = optional_header_unpacked["DataDirectory"]
-            print(optional_header_unpacked["ImageBase"] + data_directory[1].get("VirtualAddress"))
-            print(optional_header_unpacked["ImageBase"])
-            file.seek(pe_parser.utils.rva_to_file_offset(data_directory[1].get("VirtualAddress"), section_headers_unpacked), 0)  
-
-            data = file.read(20)
-            print(f"confirmation: {len(data)}")
-
-
-            import_directory_table = pe_parser.unpackers.import_directory_table_unpack(file)
-
-            print("\nimport table: ")
-
-            for descriptor in import_directory_table:
-                name_offset = pe_parser.utils.rva_to_file_offset(descriptor.Name, section_headers_unpacked)
-                file.seek(name_offset, 0) # Seek to the DLL name string
-                dll_name = bytearray()
-                while (byte := file.read(1)) != b'\x00':
-                    dll_name.append(ord(byte))
-                print(f"DLL: {dll_name.decode('ascii')}")
-                print(f"Functions IAT RVA: {descriptor.FirstThunk:#x}")
-                print(f"Functions ILT RVA: {descriptor.OriginalFirstThunk:#x}\n")
-
-            
-    except Exception as e:
-        print(e)
-
-    #for the ht headers, the structure is the following:
-    #4 bytes for the PE signature (50450000)
-    #20 bytes for the file header/COFF header
-    #optional header which is either 224 bytes 32 bit files or 240 bytews for 64 bit files
-    #the first 2 byte field of the optional header is the magic word which is either 10B for 32 bit files or 20B for 64 bit files
+    elif args.dir:
+        analyse_batch(args.dir, args)
 
 if __name__ == '__main__':
     main()

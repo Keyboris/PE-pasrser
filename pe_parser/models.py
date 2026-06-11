@@ -1,4 +1,4 @@
-class section_header:
+class SectionHeader:
     def __init__(self, Name, PhysicalAddress, VirtualSize, VirtualAddress, SizeOfRawData, PointerToRawData, PointerToRelocations, PointerToLinenumbers, NumberOfRelocations, NumberOfLinenumbers, Characteristics):
         self.Name = Name
         self.PhysicalAddress = PhysicalAddress
@@ -12,7 +12,7 @@ class section_header:
         self.NumberOfLinenumbers = NumberOfLinenumbers
         self.Characteristics = Characteristics
 
-class image_import_descriptor:
+class ImageImportDescriptor:
     def __init__(self, Characteristics = 0, OriginalFirstThunk = 0, TimeDateStamp = 0, ForwarderChain = 0, Name = 0, FirstThunk = 0):
         self.Characteristics = Characteristics
         self.OriginalFirstThunk = OriginalFirstThunk
@@ -21,7 +21,7 @@ class image_import_descriptor:
         self.Name = Name
         self.FirstThunk = FirstThunk
 
-    def isZeroed(self):
+    def isZeroed(self) -> bool:
         return (self.Characteristics == 0 and
                 self.OriginalFirstThunk == 0 and
                 self.TimeDateStamp == 0 and
